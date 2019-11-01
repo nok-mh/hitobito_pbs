@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-#  Copyright (c) 2012-2018, Pfadibewegung Schweiz. This file is part of
+#  Copyright (c) 2012-2019, Pfadibewegung Schweiz. This file is part of
 #  hitobito_pbs and licensed under the Affero General Public License version 3
 #  or later. See the COPYING file at the top-level directory or at
 #  https://github.com/hitobito/hitobito_pbs.
@@ -14,6 +14,10 @@ module Pbs::Event::Participation
     validate :assert_bsv_days_precision
     validate :assert_bsv_days_set
     after_create :send_black_list_mail, if: :person_blacklisted?
+
+    scope :viewed_from_supercamp, lambda {
+      includes(answers: :question).where(event_questions: { pass_on_to_supercamp: [true, nil] })
+    }
   end
 
   def approvers
@@ -37,9 +41,9 @@ module Pbs::Event::Participation
     if event.try(:bsv_days).present? && %w[attended].include?(state) && bsv_days.blank?
       msg = I18n.t('activerecord.errors.messages.must_exist')
       errors.add(:bsv_days, msg)
-    end 
+    end
   end
-  
+
   def person_blacklisted?
     person.black_listed?
   end
